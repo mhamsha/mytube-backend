@@ -16,7 +16,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 //   //^ remove password and refresh token from res
 //   //^ send response
 
-// Simple  
+// Simple
 // const registerUser = asyncHandler(async (req, res) => {
 //   //~ req the string data from frontend and for file I use middleware(muler)
 //   const { username, fullName, email, password } = req.body;
@@ -76,7 +76,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 //     .json(new ApiResponse(200, createdUser, "User registered Successfully"));
 // });
 
-// modular 
+// modular
 const registerUser = asyncHandler(async (req, res) => {
   //~ Data Req
   const { username, fullName, email, password } = req.body;
@@ -89,7 +89,15 @@ const registerUser = asyncHandler(async (req, res) => {
 
   //~ check for images
   const avatarLocalPath = req.files?.avatar[0].path;
-  const coverImageLocalPath = req.files?.coverImage[0].path;
+  // const coverImageLocalPath = req.files?.coverImage[0].path;
+  let coverImageLocalPath;
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
+  }
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is required!");
   }
