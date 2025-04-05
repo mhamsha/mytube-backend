@@ -212,7 +212,7 @@ const loginUser = asyncHandler(async (req, res) => {
   // get the data from req body
   const { username, email, password } = req.body;
   // add validation to the data
-  if (!username || !email) {
+  if (!(username || email)) {
     throw new ApiError(400, "username or email is required!");
   }
   if (!password) {
@@ -220,7 +220,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
   // find if the user exist in DB
   const user = await User.findOne({
-    $or: [{ username, email }],
+    $or: [{ username }, { email }],
   });
   // validate to the user from DB
   if (!user) {
@@ -232,7 +232,7 @@ const loginUser = asyncHandler(async (req, res) => {
   }
   // generate the access and refresh token
   const { refreshToken, accessToken } = await genAccessAndRefreshTok(user._id);
-  const loggedInUser = User.findById(user._id).select(
+  const loggedInUser = await  User.findById(user._id).select(
     "-password -refreshToken"
   );
 
@@ -275,8 +275,8 @@ const logoutUser = asyncHandler(async (req, res) => {
   };
   return res
     .status(200)
-    .clearCooke("accessToken", options)
-    .clearCooke("refreshToken", options)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
     .json(new ApiResponse(200, {}, "user logged out successfully"));
 });
 export { registerUser, loginUser, logoutUser };
