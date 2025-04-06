@@ -182,7 +182,6 @@ const createUser = async ({
   return createdUser;
 };
 
-// userLogin
 const genAccessAndRefreshTok = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -201,6 +200,7 @@ const genAccessAndRefreshTok = async (userId) => {
     );
   }
 };
+// * userLogin
 const loginUser = asyncHandler(async (req, res) => {
   // if they gave referesh token, match the refresh token to db refresh token
   // check if the refresh token time remaining
@@ -259,7 +259,7 @@ const loginUser = asyncHandler(async (req, res) => {
     );
 });
 
-// user loggout
+// * user loggout
 const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req.user._id,
@@ -281,9 +281,10 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "user logged out successfully"));
 });
 
+// * refresh access token
 const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken;
-
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
 
   if (!incomingRefreshToken) {
     throw new ApiError(401, "Unauthorized Request");
@@ -300,7 +301,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
   const user = await User.findById(decodedToken?._id);
 
-  
   if (user?.refreshToken !== incomingRefreshToken) {
     throw new ApiError(403, "Refresh Token Expired or Used");
   }
@@ -327,4 +327,80 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
       )
     );
 });
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+
+// * change current password
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  if (!(oldPassword && newPassword)) {
+    throw new ApiError(401, "Password Fields are Required");
+  }
+  const user = req.user;
+  if (!user) {
+    throw new ApiError("401", "User not Found");
+  }
+  const currentUser = await User.findById(user?._id);
+  if (!currentUser) {
+    throw new ApiError("401", "User not Found");
+  }
+  const isPasswordCorrect = await currentUser.isPasswordCorrect(oldPassword);
+  if (!isPasswordCorrect) {
+    throw new ApiError(401, "Incorrect Password");
+  }
+  currentUser.password = newPassword;
+  await currentUser.save();
+
+  res
+    .status(201)
+    .json(new ApiResponse(201, [], "Password changed Successfully "));
+});
+
+// * get current user
+const getCurrentUser = asyncHandler(async (req, res) => {
+  res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "Current User Fetched Successsfully"));
+});
+
+// * update Account Details
+const updateAccountDetails = asyncHandler(async (req, res) => {
+  // * Algo :
+  /* 
+    ^ get the updated details from user (email, fullName)
+    ^ Validate the Details from user
+    ^ get the user from verifyJWT middle 
+    ^ update the detials in MongoDB 
+    ^ return updated chages with success message
+  */
+
+  const { email, fullName } = req.body;
+  if (!(email || fullName)) {
+    throw new ApiError(401, "email or fullName is required");
+  }
+  const user = req.user;
+  user.fullName = fullName ? fullName : user.fullName;
+  user.email = email ? email : user.email;
+  const updatedUser = await user.save();
+  if (!updatedUser) {
+    throw new ApiError(500, "Error while updated detials in DB");
+  }
+  res
+    .status(200)
+    .json(new ApiResponse(200, updatedUser, "User Updated Successfully"));
+});
+
+// TODO: Complete this with cloudinary utility to delete file
+// * update avatar file
+const updateUserAvatar = asyncHandler(async (req, res) => {});
+// TODO: Complete this with cloudinary utility to delete file
+// * update coverimage file
+const updateUserCoverImage = asyncHandler(async (req, res) => {});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateAccountDetails,
+};

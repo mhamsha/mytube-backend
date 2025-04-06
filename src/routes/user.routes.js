@@ -1,9 +1,12 @@
 import { Router } from "express";
 import {
+  changeCurrentPassword,
+  getCurrentUser,
   loginUser,
   logoutUser,
   refreshAccessToken,
   registerUser,
+  updateAccountDetails,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJwt } from "../middlewares/auth.middleware.js";
@@ -28,6 +31,9 @@ router.route("/login").post(loginUser);
 // protected routes
 router.route("/logout").get(verifyJwt, logoutUser);
 router.route("/refresh-token").get(refreshAccessToken);
+router.route("/change-password").post(verifyJwt, changeCurrentPassword)
+router.route("/get-current-user").get(verifyJwt, getCurrentUser)
+router.route("/update-account-details").post(verifyJwt, updateAccountDetails)
 
 
 export default router;
