@@ -4,6 +4,7 @@ import { User } from "../models/user.models.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 
 //   //* Resgister controller Algo
 //   //^ Request the data from user/frontend
@@ -395,6 +396,77 @@ const updateUserAvatar = asyncHandler(async (req, res) => {});
 // * update coverimage file
 const updateUserCoverImage = asyncHandler(async (req, res) => {});
 
+// * get channel profile
+const getChannelProfile = asyncHandler(async (req, res) => {
+  console.log("ello")
+  const { username } = req.body;
+
+  if (!username.trim()) {
+    throw new ApiError(400, "Username is requrired");
+  }
+
+  const channel = await User.aggregate([
+    {
+      $match: {
+        username: username?.toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribres",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscribersCount: {
+          $size: "$subscribres",
+        },
+        subscribeToCount: {
+          $size: "$subscribedTo",
+        },
+        isCurrentUserSubscribed: {
+            $cond: {
+              if: { $in: [req.user?._id, "$subscribres.subscribe"] },
+              then: true,
+              else: false,
+            },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        username: 1,
+        subscribersCount: 1,
+        subscribeToCount: 1,
+        isCurrentUserSubscribed: 1,
+        email: 1,
+        avatar: 1,
+        coverImage: 1,
+      },
+    },
+  ]);
+
+  if (!channel.length) {
+    throw new ApiError(400, "channel does not exist");
+  }
+  res
+    .status(200)
+    .json(
+      new ApiResponse(200, channel[0], "User Channel Fetched Successfully")
+    );
+});
 export {
   registerUser,
   loginUser,
@@ -403,4 +475,5 @@ export {
   changeCurrentPassword,
   getCurrentUser,
   updateAccountDetails,
+  getChannelProfile,
 };

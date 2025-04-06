@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   changeCurrentPassword,
+  getChannelProfile,
   getCurrentUser,
   loginUser,
   logoutUser,
@@ -29,11 +30,11 @@ router.route("/register").post(
 router.route("/login").post(loginUser);
 
 // protected routes
+router.route("/channel-profile/").post(verifyJwt, getChannelProfile)
 router.route("/logout").get(verifyJwt, logoutUser);
 router.route("/refresh-token").get(refreshAccessToken);
-router.route("/change-password").post(verifyJwt, changeCurrentPassword)
-router.route("/get-current-user").get(verifyJwt, getCurrentUser)
-router.route("/update-account-details").post(verifyJwt, updateAccountDetails)
-
+router.route("/change-password").post(verifyJwt, changeCurrentPassword);
+router.route("/get-current-user").get(verifyJwt, getCurrentUser);
+router.route("/update-account-details").post(verifyJwt, updateAccountDetails);
 
 export default router;
